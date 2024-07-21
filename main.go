@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -62,7 +63,7 @@ func main() {
 
 func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
 	if string(update.Message.Text[0]) == `\` {
-		err := dbsql.HandleCommand(DB, update)
+		err := handleCommand(bot, update, DB)
 		if err != nil {
 			log.Print("command init failed: ", err)
 		}
@@ -87,4 +88,44 @@ func sendMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, message string) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
 	time.Sleep(refreshTime)
 	bot.Send(msg)
+}
+
+func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) error {
+	userID := update.Message.From.ID
+	profile, err := dbsql.GetUserProfile(db, userID)
+	if err != nil {
+		profile = &dbsql.UserProfile{
+			UserID:       userID,
+			OutputFormat: 1,
+			ValueFormat:  1,
+		}
+	}
+
+	request := update.Message.Text
+	switch request {
+	case "/outputformat":
+		profile.OutputFormat = 2
+		dbsql.SaveUserProfile(db, profile)
+	case "/valueformat":
+		profile.ValueFormat = 2
+		dbsql.SaveUserProfile(db, profile)
+	case "/start":
+		dbsql.SaveUserProfile(db, profile)
+		temp, err := getText("./texts/start.txt")
+		if err != nil {
+			return err
+		}
+		sendMessage(bot, update, temp)
+	default:
+		return fmt.Errorf("unknown command")
+	}
+	return nil
+}
+
+func getText(filename string) (string, error) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
 }

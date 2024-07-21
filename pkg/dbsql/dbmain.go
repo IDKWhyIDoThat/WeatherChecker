@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -51,40 +50,11 @@ func GetUserProfile(db *sql.DB, userID int) (*UserProfile, error) {
 	return &profile, nil
 }
 
-func saveUserProfile(db *sql.DB, profile *UserProfile) error {
+func SaveUserProfile(db *sql.DB, profile *UserProfile) error {
 	_, err := db.Exec("INSERT OR REPLACE INTO user_profiles (user_id, outputformat, valueformat) VALUES (?, ?, ?)",
 		profile.UserID, profile.OutputFormat, profile.ValueFormat)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func HandleCommand(db *sql.DB, update tgbotapi.Update) error {
-	userID := update.Message.From.ID
-	profile, err := GetUserProfile(db, userID)
-	if err != nil {
-		profile = &UserProfile{
-			UserID:       userID,
-			OutputFormat: 1,
-			ValueFormat:  1,
-		}
-	}
-
-	request := update.Message.Text
-
-	switch request {
-	case "/outputformat":
-		profile.OutputFormat = 2
-		saveUserProfile(db, profile)
-	case "/valueformat":
-		profile.ValueFormat = 2
-		saveUserProfile(db, profile)
-	case "/start":
-
-	default:
-		return fmt.Errorf("unknown command")
 	}
 
 	return nil
