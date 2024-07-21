@@ -2,7 +2,6 @@ package dbsql
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -42,7 +41,13 @@ func GetUserProfile(db *sql.DB, userID int) (*UserProfile, error) {
 	err := row.Scan(&profile.OutputFormat, &profile.ValueFormat)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("profile not found")
+			profile := &UserProfile{
+				UserID:       userID,
+				OutputFormat: 1,
+				ValueFormat:  1,
+			}
+			log.Print("NewProfile")
+			return profile, nil
 		}
 		return nil, err
 	}

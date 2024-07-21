@@ -95,12 +95,7 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 	userID := update.Message.From.ID
 	profile, err := dbsql.GetUserProfile(db, userID)
 	if err != nil {
-		profile = &dbsql.UserProfile{
-			UserID:       userID,
-			OutputFormat: 1,
-			ValueFormat:  1,
-		}
-		log.Print("NewProfile")
+		log.Fatal("Something gone terribly wrong")
 	}
 
 	request := update.Message.Text
