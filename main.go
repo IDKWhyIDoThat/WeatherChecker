@@ -62,7 +62,7 @@ func main() {
 }
 
 func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
-	if string(update.Message.Text[0]) == `\` {
+	if string(update.Message.Text[0]) == `/` {
 		err := handleCommand(bot, update, DB)
 		if err != nil {
 			log.Print("command init failed: ", err)
