@@ -111,6 +111,7 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 		dbsql.SaveUserProfile(db, profile)
 	case "/start":
 		dbsql.SaveUserProfile(db, profile)
+		log.Print("ProfileSaved")
 		temp, err := getText("./texts/start.txt")
 		if err != nil {
 			return err
