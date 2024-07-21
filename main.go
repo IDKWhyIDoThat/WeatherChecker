@@ -99,9 +99,11 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 			OutputFormat: 1,
 			ValueFormat:  1,
 		}
+		log.Print("NewProfile")
 	}
 
 	request := update.Message.Text
+	log.Printf("Request received: %s", request)
 	switch request {
 	case "/outputformat":
 		profile.OutputFormat = 2
