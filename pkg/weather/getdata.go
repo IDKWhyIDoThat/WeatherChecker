@@ -1,7 +1,7 @@
 package weather
 
 func GetCityWeatherData(city string, outputformat int, valueformat int) (string, error) {
-	weatherData, err := GetWeather(city)
+	weatherData, err := GetWeather(replaceSpaces(city, '-'))
 	if err != nil {
 		return "Something gone terribly wrong", err
 	}

@@ -1,6 +1,9 @@
 package weather
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Celsium float64
 type Farenheit float64
@@ -77,4 +80,13 @@ func (weatherData WeatherData) Visibility(format int) string {
 	default:
 		return "ErrorWindValue"
 	}
+}
+
+func replaceSpaces(input string, replacement rune) string {
+	return strings.Map(func(r rune) rune {
+		if r == ' ' {
+			return replacement
+		}
+		return r
+	}, input)
 }
