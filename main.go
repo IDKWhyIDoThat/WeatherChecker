@@ -1,14 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"time"
 	"weatherbot/pkg/additional/getsmth"
+	"weatherbot/pkg/dbsql"
 	"weatherbot/pkg/weather"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
+
+const refreshTime = 500 * time.Millisecond
 
 func main() {
 	file, err := os.OpenFile("bot.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -46,21 +50,32 @@ func main() {
 		}
 	}()
 
+	DB := dbsql.InitDB()
+
 	for {
 		if lastUpdate.Message != nil {
 			log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
-			handleMessage(bot, lastUpdate)
-			lastUpdate = tgbotapi.Update{} // Сбросить lastUpdate после обработки сообщения
+			handleMessage(bot, lastUpdate, DB)
+			lastUpdate = tgbotapi.Update{} // cбросить lastUpdate после обработки сообщения
 		}
 	}
 }
 
-func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	city := ""
-	outputformat := 2
-	valueformat := 1 // 1 is for KM, 2 is for M
-	city = update.Message.Text
-	result, err := weather.GetCityWeatherData(city, outputformat, valueformat)
+func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
+	if string(update.Message.Text[0]) == `\` {
+		err := dbsql.HandleCommand(DB, update)
+		if err != nil {
+			log.Print("command init failed: ", err)
+		}
+		return
+	}
+	city := update.Message.Text
+	profile, err := dbsql.GetUserProfile(DB, int(update.Message.Chat.ID))
+	if err != nil {
+		log.Print("error receiving data from DB: ", err)
+		return
+	}
+	result, err := weather.GetCityWeatherData(city, profile.OutputFormat, profile.ValueFormat)
 	if err != nil {
 		log.Print("error receiving data from server: ", err)
 	}
@@ -71,6 +86,6 @@ func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 func sendMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, message string) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(refreshTime)
 	bot.Send(msg)
 }

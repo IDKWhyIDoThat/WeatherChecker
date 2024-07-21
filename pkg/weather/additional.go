@@ -46,7 +46,7 @@ func (x CloudsCoverPercentage) String() string {
 }
 
 func (x PreesureInmBars) String() string {
-	return fmt.Sprintf("%.3f B", x/100)
+	return fmt.Sprintf("%.0f mb", x)
 }
 
 func (weatherData WeatherData) Temp(format int) string {
