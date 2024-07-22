@@ -70,6 +70,7 @@ func main() {
 
 	go func() {
 		for {
+			log.Printf("Man")
 			time.Sleep(notifyrefreshTime)
 			ID, City, err := notifications.NotifyCheckout()
 			if err == nil && ID != 0 {
