@@ -52,6 +52,7 @@ func main() {
 	}()
 
 	DB := dbsql.InitDB()
+	defer DB.Close()
 
 	for {
 		if lastUpdate.Message != nil {
