@@ -92,9 +92,7 @@ func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
 		return
 	}
 	city := update.Message.Text
-	log.Printf("YE")
 	profile, err := dbsql.GetUserProfile(DB, int(update.Message.Chat.ID))
-	log.Printf("UUUUU")
 	if err != nil {
 		log.Print("error receiving data from DB: ", err)
 		return

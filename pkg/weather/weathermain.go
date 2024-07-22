@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"weatherbot/pkg/additional/getsmth"
 )
@@ -47,7 +48,7 @@ func GetWeather(city string) (*WeatherData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при чтении данных: %s", err)
 	}
-
+	log.Print(string(body))
 	var weatherData WeatherData
 	err = json.Unmarshal(body, &weatherData)
 	if err != nil {
