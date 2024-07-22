@@ -46,19 +46,19 @@ func main() {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-
+	log.Printf("AAAAAAAA")
 	var lastUpdate tgbotapi.Update
-
+	log.Printf("BBBBBBBBB")
 	updates, _ := bot.GetUpdatesChan(u)
 	go func() {
 		for update := range updates {
 			lastUpdate = update
 		}
 	}()
-
+	log.Printf("CCCCCCCCC")
 	DB := dbsql.InitDB()
 	defer DB.Close()
-
+	log.Printf("DDDDDDD")
 	go func() {
 		for {
 			if lastUpdate.Message != nil {
