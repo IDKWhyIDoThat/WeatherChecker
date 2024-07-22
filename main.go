@@ -133,13 +133,20 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 	case request == "/outputformat":
 		profile.OutputFormat = swap(profile.OutputFormat)
 		log.Printf("OutputFormat is %d", profile.OutputFormat)
+		sendMessage(bot, update, "Вы сменили формат вывода")
 		dbsql.SaveUserProfile(db, profile)
 	case request == "/valueformat":
 		profile.ValueFormat = swap(profile.ValueFormat)
 		log.Printf("ValueFormat is %d", profile.ValueFormat)
+		sendMessage(bot, update, "Вы сменили размерность величин")
 		dbsql.SaveUserProfile(db, profile)
+	case request == "/help":
+		temp, err := getText("./texts/help.txt")
+		if err != nil {
+			return err
+		}
+		sendMessage(bot, update, temp)
 	case request == "/start":
-		dbsql.SaveUserProfile(db, profile)
 		temp, err := getText("./texts/start.txt")
 		if err != nil {
 			return err
@@ -147,11 +154,13 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 		sendMessage(bot, update, temp)
 	case request == "/deletenotification":
 		notifications.DeleteNotificationNOW(userID)
+		sendMessage(bot, update, "Уведомления отключены")
 	case strings.HasPrefix(request, "/setnotification"):
 		City, Interval, err := checkNotificationComandFormat(request)
 		if err != nil {
 			return fmt.Errorf("неверный формат ввода")
 		}
+		sendMessage(bot, update, "Уведомления подключены")
 		notifications.SetNotification(userID, City, Interval)
 	default:
 		return fmt.Errorf("unknown command")

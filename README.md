@@ -1,2 +1,2 @@
 # WeatherChekcer
-Telegram Bot to check weather information about one city at time
+Telegram Bot to check weather information
