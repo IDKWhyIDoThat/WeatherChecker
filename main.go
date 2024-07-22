@@ -18,7 +18,7 @@ import (
 
 const refreshTime = 500 * time.Millisecond
 
-//const notifyrefreshTime = time.Minute
+const notifyrefreshTime = time.Minute
 
 func main() {
 	file, err := os.OpenFile("bot.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -46,47 +46,40 @@ func main() {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	log.Printf("AAAAAAAA")
 	var lastUpdate tgbotapi.Update
-	log.Printf("BBBBBBBBB")
 	updates, _ := bot.GetUpdatesChan(u)
 	go func() {
 		for update := range updates {
 			lastUpdate = update
 		}
 	}()
-	log.Printf("CCCCCCCCC")
 	DB := dbsql.InitDB()
 	defer DB.Close()
-	log.Printf("DDDDDDD")
 	go func() {
 		for {
-			if lastUpdate.Message != nil {
-				log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
-				handleMessage(bot, lastUpdate, DB)
-				lastUpdate = tgbotapi.Update{} // cбросить lastUpdate после обработки сообщения
+			time.Sleep(notifyrefreshTime)
+			ID, City, err := notifications.NotifyCheckout()
+			if err == nil && ID != 0 {
+				profile, err := dbsql.GetUserProfile(DB, ID)
+				if err != nil {
+					log.Print("error receiving data from server: ", err)
+					continue
+				}
+				result, err := weather.GetCityWeatherData(City, profile.OutputFormat, profile.ValueFormat)
+				if err != nil {
+					log.Print("error receiving data from server: ", err)
+				}
+				sendMessageDirectly(bot, ID, result)
 			}
 		}
 	}()
-	/*
-		go func() {
-			for {
-				time.Sleep(notifyrefreshTime)
-				ID, City, err := notifications.NotifyCheckout()
-				if err == nil && ID != 0 {
-					profile, err := dbsql.GetUserProfile(DB, ID)
-					if err != nil {
-						log.Print("error receiving data from server: ", err)
-						continue
-					}
-					result, err := weather.GetCityWeatherData(City, profile.OutputFormat, profile.ValueFormat)
-					if err != nil {
-						log.Print("error receiving data from server: ", err)
-					}
-					sendMessageDirectly(bot, ID, result)
-				}
-			}
-		}()*/
+	for {
+		if lastUpdate.Message != nil {
+			log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
+			handleMessage(bot, lastUpdate, DB)
+			lastUpdate = tgbotapi.Update{}
+		}
+	}
 }
 
 func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
@@ -121,11 +114,11 @@ func sendMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, message string) {
 	bot.Send(msg)
 }
 
-/*func sendMessageDirectly(bot *tgbotapi.BotAPI, ID int, message string) {
+func sendMessageDirectly(bot *tgbotapi.BotAPI, ID int, message string) {
 	msg := tgbotapi.NewMessage(int64(ID), message)
 	time.Sleep(refreshTime)
 	bot.Send(msg)
-}*/
+}
 
 func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) error {
 	userID := update.Message.From.ID
