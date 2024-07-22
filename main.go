@@ -40,6 +40,7 @@ func main() {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 300
 
 	var lastUpdate tgbotapi.Update
 
@@ -102,14 +103,13 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 	log.Printf("Request received: %s", request)
 	switch request {
 	case "/outputformat":
-		profile.OutputFormat = 2
+		profile.OutputFormat = swap(profile.OutputFormat)
 		dbsql.SaveUserProfile(db, profile)
 	case "/valueformat":
-		profile.ValueFormat = 2
+		profile.ValueFormat = swap(profile.ValueFormat)
 		dbsql.SaveUserProfile(db, profile)
 	case "/start":
 		dbsql.SaveUserProfile(db, profile)
-		log.Print("ProfileSaved")
 		temp, err := getText("./texts/start.txt")
 		if err != nil {
 			return err
@@ -127,4 +127,12 @@ func getText(filename string) (string, error) {
 		return "", err
 	}
 	return string(content), nil
+}
+
+func swap(x int) int {
+	if x == 1 {
+		return 2
+	} else {
+		return 1
+	}
 }
