@@ -63,6 +63,7 @@ func main() {
 			if lastUpdate.Message != nil {
 				log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
 				handleMessage(bot, lastUpdate, DB)
+				log.Printf("Woof")
 				lastUpdate = tgbotapi.Update{} // cбросить lastUpdate после обработки сообщения
 			}
 		}
