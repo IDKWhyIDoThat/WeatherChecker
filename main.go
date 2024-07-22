@@ -5,15 +5,19 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 	"weatherbot/pkg/additional/getsmth"
 	"weatherbot/pkg/dbsql"
+	"weatherbot/pkg/notifications"
 	"weatherbot/pkg/weather"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 const refreshTime = 500 * time.Millisecond
+const notifyrefreshTime = time.Minute
 
 func main() {
 	file, err := os.OpenFile("bot.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -54,13 +58,34 @@ func main() {
 	DB := dbsql.InitDB()
 	defer DB.Close()
 
-	for {
-		if lastUpdate.Message != nil {
-			log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
-			handleMessage(bot, lastUpdate, DB)
-			lastUpdate = tgbotapi.Update{} // cбросить lastUpdate после обработки сообщения
+	go func() {
+		for {
+			if lastUpdate.Message != nil {
+				log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
+				handleMessage(bot, lastUpdate, DB)
+				lastUpdate = tgbotapi.Update{} // cбросить lastUpdate после обработки сообщения
+			}
 		}
-	}
+	}()
+
+	go func() {
+		for {
+			time.Sleep(notifyrefreshTime)
+			ID, City, err := notifications.NotifyCheckout()
+			if err == nil && ID != 0 {
+				profile, err := dbsql.GetUserProfile(DB, ID)
+				if err != nil {
+					log.Print("error receiving data from server: ", err)
+					continue
+				}
+				result, err := weather.GetCityWeatherData(City, profile.OutputFormat, profile.ValueFormat)
+				if err != nil {
+					log.Print("error receiving data from server: ", err)
+				}
+				sendMessageDirectly(bot, ID, result)
+			}
+		}
+	}()
 }
 
 func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
@@ -93,6 +118,12 @@ func sendMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, message string) {
 	bot.Send(msg)
 }
 
+func sendMessageDirectly(bot *tgbotapi.BotAPI, ID int, message string) {
+	msg := tgbotapi.NewMessage(int64(ID), message)
+	time.Sleep(refreshTime)
+	bot.Send(msg)
+}
+
 func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) error {
 	userID := update.Message.From.ID
 	profile, err := dbsql.GetUserProfile(db, userID)
@@ -102,22 +133,28 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 
 	request := update.Message.Text
 	log.Printf("Request received: %s", request)
-	switch request {
-	case "/outputformat":
+	switch {
+	case request == "/outputformat":
 		profile.OutputFormat = swap(profile.OutputFormat)
 		log.Printf("OutputFormat is %d", profile.OutputFormat)
 		dbsql.SaveUserProfile(db, profile)
-	case "/valueformat":
+	case request == "/valueformat":
 		profile.ValueFormat = swap(profile.ValueFormat)
 		log.Printf("ValueFormat is %d", profile.ValueFormat)
 		dbsql.SaveUserProfile(db, profile)
-	case "/start":
+	case request == "/start":
 		dbsql.SaveUserProfile(db, profile)
 		temp, err := getText("./texts/start.txt")
 		if err != nil {
 			return err
 		}
 		sendMessage(bot, update, temp)
+	case strings.HasPrefix(request, "/setnotification"):
+		City, Interval, err := checkNotificationComandFormat(request)
+		if err != nil {
+			return fmt.Errorf("неверный формат ввода")
+		}
+		notifications.SetNotification(userID, City, Interval)
 	default:
 		return fmt.Errorf("unknown command")
 	}
@@ -138,4 +175,17 @@ func swap(x int) int {
 	} else {
 		return 1
 	}
+}
+
+func checkNotificationComandFormat(input string) (string, int, error) {
+	parts := strings.Fields(input)
+	if len(parts) != 3 {
+		return "", 0, fmt.Errorf("неверный формат строки")
+	}
+	message := parts[1]
+	duration, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return "", 0, fmt.Errorf("неверный формат числа")
+	}
+	return message, duration, nil
 }
