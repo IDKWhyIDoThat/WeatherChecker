@@ -63,31 +63,29 @@ func main() {
 			if lastUpdate.Message != nil {
 				log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
 				handleMessage(bot, lastUpdate, DB)
-				log.Printf("Woof")
 				lastUpdate = tgbotapi.Update{} // cбросить lastUpdate после обработки сообщения
 			}
 		}
 	}()
-
-	go func() {
-		for {
-			log.Printf("Man")
-			time.Sleep(notifyrefreshTime)
-			ID, City, err := notifications.NotifyCheckout()
-			if err == nil && ID != 0 {
-				profile, err := dbsql.GetUserProfile(DB, ID)
-				if err != nil {
-					log.Print("error receiving data from server: ", err)
-					continue
+	/*
+		go func() {
+			for {
+				time.Sleep(notifyrefreshTime)
+				ID, City, err := notifications.NotifyCheckout()
+				if err == nil && ID != 0 {
+					profile, err := dbsql.GetUserProfile(DB, ID)
+					if err != nil {
+						log.Print("error receiving data from server: ", err)
+						continue
+					}
+					result, err := weather.GetCityWeatherData(City, profile.OutputFormat, profile.ValueFormat)
+					if err != nil {
+						log.Print("error receiving data from server: ", err)
+					}
+					sendMessageDirectly(bot, ID, result)
 				}
-				result, err := weather.GetCityWeatherData(City, profile.OutputFormat, profile.ValueFormat)
-				if err != nil {
-					log.Print("error receiving data from server: ", err)
-				}
-				sendMessageDirectly(bot, ID, result)
 			}
-		}
-	}()
+		}()*/
 }
 
 func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
