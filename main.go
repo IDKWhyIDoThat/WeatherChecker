@@ -104,9 +104,11 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 	switch request {
 	case "/outputformat":
 		profile.OutputFormat = swap(profile.OutputFormat)
+		log.Printf("OutputFormat is %d", profile.OutputFormat)
 		dbsql.SaveUserProfile(db, profile)
 	case "/valueformat":
 		profile.ValueFormat = swap(profile.ValueFormat)
+		log.Printf("ValueFormat is %d", profile.ValueFormat)
 		dbsql.SaveUserProfile(db, profile)
 	case "/start":
 		dbsql.SaveUserProfile(db, profile)
