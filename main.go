@@ -145,6 +145,8 @@ func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) err
 			return err
 		}
 		sendMessage(bot, update, temp)
+	case request == "/deletenotification":
+		notifications.DeleteNotificationNOW(userID)
 	case strings.HasPrefix(request, "/setnotification"):
 		City, Interval, err := checkNotificationComandFormat(request)
 		if err != nil {

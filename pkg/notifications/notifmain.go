@@ -109,3 +109,30 @@ func SetNotification(ID int, City string, interval int) error {
 	}
 	return nil
 }
+
+func DeleteNotificationNOW(ID int) error {
+	file, err := os.Open("./notifications.txt")
+	if err != nil {
+		return fmt.Errorf("ошибка открытия файла: %s", err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, ":")
+		if strconv.Itoa(ID) == parts[0] {
+			content, err := os.ReadFile("./notifications.txt")
+			if err != nil {
+				return fmt.Errorf("ошибка чтения файла: %s", err)
+			}
+			text := string(content)
+			newText := strings.ReplaceAll(text, line+"\n", "")
+			err = os.WriteFile("./notifications.txt", []byte(newText), 0644)
+			if err != nil {
+				return fmt.Errorf("ошибка записи файла: %s", err)
+			}
+			return nil
+		}
+	}
+	return nil
+}
