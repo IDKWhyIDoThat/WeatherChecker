@@ -17,7 +17,8 @@ import (
 )
 
 const refreshTime = 500 * time.Millisecond
-const notifyrefreshTime = time.Minute
+
+//const notifyrefreshTime = time.Minute
 
 func main() {
 	file, err := os.OpenFile("bot.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -98,7 +99,9 @@ func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
 		return
 	}
 	city := update.Message.Text
+	log.Printf("YE")
 	profile, err := dbsql.GetUserProfile(DB, int(update.Message.Chat.ID))
+	log.Printf("UUUUU")
 	if err != nil {
 		log.Print("error receiving data from DB: ", err)
 		return
@@ -118,11 +121,11 @@ func sendMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, message string) {
 	bot.Send(msg)
 }
 
-func sendMessageDirectly(bot *tgbotapi.BotAPI, ID int, message string) {
+/*func sendMessageDirectly(bot *tgbotapi.BotAPI, ID int, message string) {
 	msg := tgbotapi.NewMessage(int64(ID), message)
 	time.Sleep(refreshTime)
 	bot.Send(msg)
-}
+}*/
 
 func handleCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *sql.DB) error {
 	userID := update.Message.From.ID
