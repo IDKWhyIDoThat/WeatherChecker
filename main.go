@@ -34,7 +34,6 @@ func main() {
 
 	lastUpdateCh := make(chan tgbotapi.Update)
 	dbCh := make(chan *sql.DB)
-	botCh := make(chan *tgbotapi.BotAPI)
 
 	bot := createBot(botrefer)
 
@@ -51,11 +50,9 @@ func main() {
 	defer DB.Close()
 	dbCh <- DB
 
-	botCh <- bot
-
 	go fetchLastUpdates(updates, lastUpdateCh)
 
-	go checkNotificaions(dbCh, botCh)
+	go checkNotificaions(dbCh, bot)
 
 	for {
 		lastUpdate := <-lastUpdateCh
@@ -89,11 +86,10 @@ func fetchLastUpdates(updates tgbotapi.UpdatesChannel, updatech chan<- tgbotapi.
 	}
 }
 
-func checkNotificaions(DBch chan *sql.DB, botCh chan *tgbotapi.BotAPI) {
+func checkNotificaions(DBch chan *sql.DB, bot *tgbotapi.BotAPI) {
 	for {
 		time.Sleep(notifyrefreshTime)
 		DB := <-DBch
-		bot := <-botCh
 		ID, City, err := notifications.NotifyCheckout()
 		if err == nil && ID != 0 {
 			profile, err := dbsql.GetUserProfile(DB, ID)
@@ -108,7 +104,6 @@ func checkNotificaions(DBch chan *sql.DB, botCh chan *tgbotapi.BotAPI) {
 			sendMessageDirectly(bot, ID, result)
 		}
 		DBch <- DB
-		botCh <- bot
 	}
 }
 

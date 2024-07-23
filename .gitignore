@@ -1,0 +1,5 @@
+secret/
+bin/
+**.log
+**.exe
+pkg/additional/test.txt
