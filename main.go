@@ -32,8 +32,6 @@ func main() {
 	log.SetOutput(logfile)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	lastUpdateCh := make(chan tgbotapi.Update)
-
 	bot := createBot(botrefer)
 
 	bot.Debug = true
@@ -59,13 +57,12 @@ func main() {
 	go checkNotificaions(DB, bot)
 
 	for {
-		log.Printf("Update receiced")
 		if lastUpdate.Message != nil {
+			log.Printf("Update receiced")
 			log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
 			handleMessage(bot, lastUpdate, DB)
 			lastUpdate = tgbotapi.Update{}
 		}
-		lastUpdateCh <- lastUpdate
 		time.Sleep(refreshTime)
 	}
 }
