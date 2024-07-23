@@ -7,6 +7,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const dbfilename = "./telegram.db"
+
 type UserProfile struct {
 	UserID       int
 	OutputFormat int
@@ -14,10 +16,11 @@ type UserProfile struct {
 }
 
 func InitDB() *sql.DB {
-	db, err := sql.Open("sqlite3", "./telegram.db")
+	db, err := sql.Open("sqlite3", dbfilename)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
 	createTableQuery := `
     CREATE TABLE IF NOT EXISTS user_profiles (
@@ -61,6 +64,5 @@ func SaveUserProfile(db *sql.DB, profile *UserProfile) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }

@@ -3,11 +3,11 @@ package weather
 func GetCityWeatherData(city string, outputformat int, valueformat int) (string, error) {
 	weatherData, err := GetWeather(replaceSpaces(city, '-'))
 	if err != nil {
-		return "Something gone terribly wrong. Probably server went down. Please, try again later.", err
+		return "Что-то пошло не по плану. Вероятно, сервер не отвечает. Повторите попытку позже.", err
 	}
-	answer, err := WeatherDataOutputFormat(*weatherData, outputformat, valueformat)
+	response, err := WeatherDataOutputFormat(*weatherData, outputformat, valueformat)
 	if err != nil {
-		return "Unknown city name", err
+		return "Неизвестный город/местность", err
 	}
-	return answer, err
+	return response, err
 }

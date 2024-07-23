@@ -10,12 +10,15 @@ import (
 	"time"
 )
 
+const notifyfilename = "./notifications.txt"
+
 func NotifyCheckout() (int, string, error) {
-	file, err := os.Open("./notifications.txt")
+	file, err := os.Open(notifyfilename)
 	if err != nil {
 		return 0, "", fmt.Errorf("ошибка открытия файла: %s", err)
 	}
 	defer file.Close()
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -63,12 +66,12 @@ func notificationTime(ID string, City string) (int, string) {
 }
 
 func replaceStringInFile(oldStr string, newStr string) error {
-	data, err := os.ReadFile("./notifications.txt")
+	data, err := os.ReadFile(notifyfilename)
 	if err != nil {
 		return err
 	}
 	newContent := strings.Replace(string(data), oldStr, newStr, -1)
-	err = os.WriteFile("./notifications.txt", []byte(newContent), 0644)
+	err = os.WriteFile(notifyfilename, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}
@@ -77,11 +80,12 @@ func replaceStringInFile(oldStr string, newStr string) error {
 }
 
 func SetNotification(ID int, City string, interval int) error {
-	file, err := os.Open("./notifications.txt")
+	file, err := os.Open(notifyfilename)
 	if err != nil {
 		return fmt.Errorf("ошибка открытия файла: %s", err)
 	}
 	defer file.Close()
+
 	current_time := getCurrentTime()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -99,7 +103,7 @@ func SetNotification(ID int, City string, interval int) error {
 		}
 	}
 	file.Close()
-	file, err = os.OpenFile("./notifications.txt", os.O_APPEND|os.O_WRONLY, 0644)
+	file, err = os.OpenFile(notifyfilename, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -111,23 +115,24 @@ func SetNotification(ID int, City string, interval int) error {
 }
 
 func DeleteNotificationNOW(ID int) error {
-	file, err := os.Open("./notifications.txt")
+	file, err := os.Open(notifyfilename)
 	if err != nil {
 		return fmt.Errorf("ошибка открытия файла: %s", err)
 	}
 	defer file.Close()
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, ":")
 		if strconv.Itoa(ID) == parts[0] {
-			content, err := os.ReadFile("./notifications.txt")
+			content, err := os.ReadFile(notifyfilename)
 			if err != nil {
 				return fmt.Errorf("ошибка чтения файла: %s", err)
 			}
 			text := string(content)
 			newText := strings.ReplaceAll(text, line+"\n", "")
-			err = os.WriteFile("./notifications.txt", []byte(newText), 0644)
+			err = os.WriteFile(notifyfilename, []byte(newText), 0644)
 			if err != nil {
 				return fmt.Errorf("ошибка записи файла: %s", err)
 			}

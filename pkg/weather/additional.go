@@ -28,10 +28,10 @@ func (x HumidityPercent) String() string {
 }
 
 func (x WindSpeedInKPH) String() string {
-	return fmt.Sprintf("%.1f km/h", x)
+	return fmt.Sprintf("%.1f m/s", x/3.6)
 }
 func (x WindSpeedInMPH) String() string {
-	return fmt.Sprintf("%.1f miles/h", x)
+	return fmt.Sprintf("%.1f mm/s", x/3.6)
 }
 
 func (x VisibilityRangeInKm) String() string {
