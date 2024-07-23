@@ -48,13 +48,13 @@ func main() {
 
 	var lastUpdate tgbotapi.Update
 
+	go checkNotificaions(DB, bot)
+
 	go func() {
 		for update := range updates {
 			lastUpdate = update
 		}
 	}()
-
-	go checkNotificaions(DB, bot)
 
 	for {
 		if lastUpdate.Message != nil {
