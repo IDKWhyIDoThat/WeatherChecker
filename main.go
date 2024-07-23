@@ -35,16 +35,7 @@ func main() {
 	lastUpdateCh := make(chan tgbotapi.Update)
 	dbCh := make(chan *sql.DB)
 
-	//	bot := createBot(botrefer)
-
-	BOTToken, err := getsmth.GetAPIkey(botrefer)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bot, err := tgbotapi.NewBotAPI(BOTToken)
-	if err != nil {
-		log.Fatal(err)
-	}
+	bot := createBot(botrefer)
 
 	bot.Debug = true
 
@@ -77,7 +68,7 @@ func main() {
 	}
 }
 
-/*func createBot(refer string) *tgbotapi.BotAPI {
+func createBot(refer string) *tgbotapi.BotAPI {
 	BOTToken, err := getsmth.GetAPIkey(refer)
 	if err != nil {
 		log.Fatal(err)
@@ -87,14 +78,12 @@ func main() {
 		log.Fatal(err)
 	}
 	return bot
-}*/
+}
 
 func fetchLastUpdates(updates tgbotapi.UpdatesChannel, updatech chan<- tgbotapi.Update) {
-	var lastUpdate tgbotapi.Update
 	for update := range updates {
-		lastUpdate = update
+		updatech <- update
 	}
-	updatech <- lastUpdate
 }
 
 func checkNotificaions(DBch chan *sql.DB, bot *tgbotapi.BotAPI) {
