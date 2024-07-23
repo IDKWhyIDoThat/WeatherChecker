@@ -33,7 +33,6 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	lastUpdateCh := make(chan tgbotapi.Update)
-	dbCh := make(chan *sql.DB)
 
 	bot := createBot(botrefer)
 
@@ -48,22 +47,20 @@ func main() {
 
 	DB := dbsql.InitDB()
 	defer DB.Close()
-	dbCh <- DB
 
 	go fetchLastUpdates(updates, lastUpdateCh)
 
-	go checkNotificaions(dbCh, bot)
+	go checkNotificaions(DB, bot)
 
 	for {
 		lastUpdate := <-lastUpdateCh
-		DB = <-dbCh
+		log.Printf("Update receiced")
 		if lastUpdate.Message != nil {
 			log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
 			handleMessage(bot, lastUpdate, DB)
 			lastUpdate = tgbotapi.Update{}
 		}
 		lastUpdateCh <- lastUpdate
-		dbCh <- DB
 		time.Sleep(refreshTime)
 	}
 }
@@ -86,10 +83,9 @@ func fetchLastUpdates(updates tgbotapi.UpdatesChannel, updatech chan<- tgbotapi.
 	}
 }
 
-func checkNotificaions(DBch chan *sql.DB, bot *tgbotapi.BotAPI) {
+func checkNotificaions(DB *sql.DB, bot *tgbotapi.BotAPI) {
 	for {
 		time.Sleep(notifyrefreshTime)
-		DB := <-DBch
 		ID, City, err := notifications.NotifyCheckout()
 		if err == nil && ID != 0 {
 			profile, err := dbsql.GetUserProfile(DB, ID)
@@ -103,7 +99,6 @@ func checkNotificaions(DBch chan *sql.DB, bot *tgbotapi.BotAPI) {
 			}
 			sendMessageDirectly(bot, ID, result)
 		}
-		DBch <- DB
 	}
 }
 
