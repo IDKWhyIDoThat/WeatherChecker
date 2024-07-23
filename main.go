@@ -48,12 +48,17 @@ func main() {
 	DB := dbsql.InitDB()
 	defer DB.Close()
 
-	go fetchLastUpdates(updates, lastUpdateCh)
+	var lastUpdate tgbotapi.Update
+
+	go func() {
+		for update := range updates {
+			lastUpdate = update
+		}
+	}()
 
 	go checkNotificaions(DB, bot)
 
 	for {
-		lastUpdate := <-lastUpdateCh
 		log.Printf("Update receiced")
 		if lastUpdate.Message != nil {
 			log.Printf("[%d] Author: %s Message: %s", lastUpdate.Message.Chat.ID, lastUpdate.Message.From.FirstName, lastUpdate.Message.Text)
@@ -75,12 +80,6 @@ func createBot(refer string) *tgbotapi.BotAPI {
 		log.Fatal(err)
 	}
 	return bot
-}
-
-func fetchLastUpdates(updates tgbotapi.UpdatesChannel, updatech chan<- tgbotapi.Update) {
-	for update := range updates {
-		updatech <- update
-	}
 }
 
 func checkNotificaions(DB *sql.DB, bot *tgbotapi.BotAPI) {
