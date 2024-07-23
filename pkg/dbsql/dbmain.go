@@ -20,7 +20,6 @@ func InitDB() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
 	createTableQuery := `
     CREATE TABLE IF NOT EXISTS user_profiles (
