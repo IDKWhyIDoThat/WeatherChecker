@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 	"weatherbot/pkg/additional/getsmth"
@@ -86,25 +85,20 @@ func checkNotificaions(DB *sql.DB, bot *tgbotapi.BotAPI) {
 		if err == nil && ID != 0 {
 			profile, err := dbsql.GetUserProfile(DB, ID)
 			if err != nil {
-				log.Print("error receiving data from server: ", err)
+				log.Print("error receiving data from DB: ", err)
 				continue
 			}
 			result, err := weather.GetCityWeatherData(City, profile.OutputFormat, profile.ValueFormat)
 			if err != nil {
 				log.Print("error receiving data from server: ", err)
 			}
-			sendMessageDirectly(bot, ID, result)
+			sendMessage(bot, int64(ID), result)
 		}
 	}
 }
 
-func sendMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, message string) {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
-	bot.Send(msg)
-}
-
-func sendMessageDirectly(bot *tgbotapi.BotAPI, ID int, message string) {
-	msg := tgbotapi.NewMessage(int64(ID), message)
+func sendMessage(bot *tgbotapi.BotAPI, ID int64, message string) {
+	msg := tgbotapi.NewMessage(ID, message)
 	bot.Send(msg)
 }
 
@@ -115,7 +109,7 @@ func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
 		var err error
 		response, err = handleCommand(update, DB)
 		if err != nil {
-			log.Print("command init failed: ", err)
+			log.Printf("command exec or init error: %s", err)
 		}
 	} else {
 		city := update.Message.Text
@@ -137,89 +131,22 @@ func handleMessage(bot *tgbotapi.BotAPI, update tgbotapi.Update, DB *sql.DB) {
 		}
 	}
 	if response != "" {
-		sendMessage(bot, update, response)
+		sendMessage(bot, update.Message.Chat.ID, response)
 	}
 }
 
-func handleCommand(update tgbotapi.Update, db *sql.DB) (string, error) {
-	userID := update.Message.From.ID
-	profile, err := dbsql.GetUserProfile(db, userID)
+func handleCommand(update tgbotapi.Update, DB *sql.DB) (string, error) {
+	profile, err := dbsql.GetUserProfile(DB, update.Message.From.ID)
 	if err != nil {
 		log.Fatal("Something gone terribly wrong")
 	}
-
-	request := update.Message.Text
-	log.Printf("Request received: %s", request)
-
-	switch {
-	case request == "/outputformat":
-		profile.OutputFormat = swap(profile.OutputFormat)
-		log.Printf("OutputFormat is %d", profile.OutputFormat)
-		dbsql.SaveUserProfile(db, profile)
-		return "Вы сменили формат вывода", nil
-
-	case request == "/valueformat":
-		profile.ValueFormat = swap(profile.ValueFormat)
-		log.Printf("ValueFormat is %d", profile.ValueFormat)
-		dbsql.SaveUserProfile(db, profile)
-		return "Вы сменили размерность величин", nil
-
-	case request == "/help":
-		temp, err := getText("./texts/help.txt")
-		if err != nil {
-			return "Я забыл, как я работаю", err
-		}
-		return temp, nil
-
-	case request == "/start":
-		temp, err := getText("./texts/start.txt")
-		if err != nil {
-			return "Привет!", err
-		}
-		return temp, nil
-
-	case request == "/deletenotification":
-		notifications.DeleteNotificationNOW(userID)
-		return "Уведомления отключены", nil
-
-	case strings.HasPrefix(request, "/setnotification") || strings.HasPrefix(request, "/set"):
-		City, Interval, err := checkNotificationComandFormat(request)
-		if err != nil {
-			return "", fmt.Errorf("неверный формат ввода")
-		}
-		notifications.SetNotification(userID, City, Interval)
-		return "Уведомления подключены", nil
-
-	default:
+	MyCommand := SetCommand(update.Message.Text, profile, DB, update.Message.From.ID)
+	if MyCommand == nil {
 		return "Неизвестная команда", fmt.Errorf("unknown command")
 	}
-}
-
-func getText(filename string) (string, error) {
-	content, err := os.ReadFile(filename)
+	response, err := MyCommand.Execute()
 	if err != nil {
-		return "", err
+		return "Произошла ошибка в ходе выполнения команды", fmt.Errorf("command error: %s", err)
 	}
-	return string(content), nil
-}
-
-func swap(x int) int {
-	if x == 1 {
-		return 2
-	} else {
-		return 1
-	}
-}
-
-func checkNotificationComandFormat(input string) (string, int, error) {
-	parts := strings.Fields(input)
-	if len(parts) != 3 {
-		return "", 0, fmt.Errorf("неверный формат строки")
-	}
-	message := parts[1]
-	duration, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return "", 0, fmt.Errorf("неверный формат числа")
-	}
-	return message, duration, nil
+	return response, nil
 }
